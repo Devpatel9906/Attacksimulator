@@ -1,0 +1,65 @@
+const Employee = require('../models/Employee')
+const Scenario = require('../models/Scenario')
+const SimulationEvent = require('../models/SimulationEvent')
+
+const { dispatchAttack } = require('../utils/channelSender')
+
+const { nanoid } = require('nanoid')
+
+async function sendManualAttack(request, reply) {
+
+  const { scenarioId, employeeIds } = request.body
+
+  const scenario = await Scenario.findById(scenarioId)
+
+  if (!scenario)
+    return reply.status(404).send({ error: "Scenario not found" })
+
+  const employees = await Employee.find({
+    _id: { $in: employeeIds }
+  })
+
+  let sent = 0
+
+  for (const employee of employees) {
+
+    const token = nanoid(32)
+
+    const event = new SimulationEvent({
+      scenario: scenario._id,
+      employee: employee._id,
+      organization: scenario.organization,
+      attackType: scenario.attackTypes[0],
+      result: "pending",
+      tokenUsed: token,
+      hopNumber: 0
+    })
+
+    await event.save()
+
+    const trackingUrl =
+      `${process.env.PUBLIC_URL}/api/sim/click/${token}`
+
+    await dispatchAttack({
+      employee,
+      attackType: scenario.attackTypes[0],
+      trackingUrl,
+      orgName: "IT Security",
+      managerName: "IT Security",
+      aggressionLevel: 1
+    })
+
+    sent++
+
+  }
+
+  return reply.send({
+    status: "Emails sent",
+    sent
+  })
+
+}
+
+module.exports = {
+  sendManualAttack
+}

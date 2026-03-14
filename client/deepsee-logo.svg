@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 88" role="img" aria-labelledby="title desc">
+<title id="title">DeepSee logo</title>
+<desc id="desc">DeepSee wordmark with a stylized eye icon.</desc>
+<defs>
+<linearGradient id="deepsee-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#62f2c1"/>
+<stop offset="100%" stop-color="#0f8cff"/>
+</linearGradient>
+</defs>
+<rect width="320" height="88" rx="20" fill="#08131f"/>
+<g transform="translate(18 18)">
+<path d="M44 10C28 10 13.8 18.5 6 31c7.8 12.5 22 21 38 21s30.2-8.5 38-21C74.2 18.5 60 10 44 10Z" fill="none" stroke="url(#deepsee-gradient)" stroke-width="6"/>
+<circle cx="44" cy="31" r="12" fill="url(#deepsee-gradient)"/>
+<circle cx="49" cy="26" r="3.5" fill="#e9fffb"/>
+</g>
+<text x="108" y="56" fill="#f5fbff" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="700" letter-spacing="1">DeepSee</text>
+</svg>

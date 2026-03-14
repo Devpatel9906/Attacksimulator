@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Microsoft Account Verification</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#f2f2f2;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.container{
+  background:white;
+  padding:40px;
+  width:320px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+input{
+  width:100%;
+  padding:10px;
+  margin:10px 0;
+}
+
+button{
+  width:100%;
+  padding:10px;
+  background:#0078d4;
+  color:white;
+  border:none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h3>Sign in</h3>
+
+<form id="phishForm">
+
+<input type="email" placeholder="Email" required>
+
+<input type="password" placeholder="Password" required>
+
+<button type="submit">Sign in</button>
+
+</form>
+
+</div>
+
+<script>
+
+const token = "__TOKEN__"
+
+document.getElementById("phishForm").addEventListener("submit", async (e) => {
+
+  e.preventDefault()
+
+  await fetch(`/api/sim/submit/${token}`, {
+    method:"POST"
+  })
+
+  alert("Login failed. Please try again later.")
+
+})
+
+</script>
+
+</body>
+</html>
