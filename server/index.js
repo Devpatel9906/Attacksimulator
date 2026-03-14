@@ -73,6 +73,11 @@ const start = async () => {
     app.register(attackRoutes)
     app.register(adminAttackRoutes, { prefix: '/api' })
 
+    app.get('/', async () => ({
+      message: 'AttackSimulator API is running',
+      version: '1.0.0'
+    }))
+
     app.get('/health', async () => ({
       status: 'ok',
       timestamp: new Date().toISOString()
