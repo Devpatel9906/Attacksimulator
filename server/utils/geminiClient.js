@@ -1,10 +1,10 @@
-const { Anthropic } = require('@anthropic-ai/sdk');
+const { GoogleGenAI } = require('@google/genai');
 
-let anthropicClient = null;
+let geminiClient = null;
 
-if (process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'leave_empty_for_now') {
-  anthropicClient = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'leave_empty_for_now') {
+  geminiClient = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
   });
 }
 
@@ -28,30 +28,35 @@ Avoid technical jargon when talking to general employees, but be highly technica
 `;
 
 /**
- * Sends a standard structured query to CyberGuard AI
+ * Sends a standard structured query to CyberGuard AI (Gemini)
  * @param {Array} messages - Array of message objects {role: 'user', content: '...'}
  * @param {String} context - Additional context to append to the system prompt (optional)
  * @returns {String} The AI's response text
  */
 async function askCyberGuard(messages, context = '') {
-  if (!anthropicClient) {
-    throw new Error('Anthropic API key is not configured.');
+  if (!geminiClient) {
+    throw new Error('Gemini API key is not configured.');
   }
 
   const systemPrompt = context 
     ? `${CYBERGUARD_SYSTEM_PROMPT}\n\nAdditional Context for this request:\n${context}`
     : CYBERGUARD_SYSTEM_PROMPT;
 
+  // Convert messages roughly into Gemini format: just a prompt string since we are doing simple 1-turn requests here.
+  // The inputs we get are like: [{ role: "user", content: "Please generate..." }]
+  const userMessage = messages[messages.length - 1].content;
+  
   try {
-    const response = await anthropicClient.messages.create({
-      model: 'claude-3-haiku-20240307', // Using Haiku for fast, cost-effective responses
-      max_tokens: 1000,
-      temperature: 0.7,
-      system: systemPrompt,
-      messages: messages,
+    const response = await geminiClient.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: userMessage,
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0.7,
+      }
     });
 
-    return response.content[0].text;
+    return response.text;
   } catch (error) {
     console.error('CyberGuard AI Error:', error);
     throw new Error('Failed to generate response from CyberGuard AI.');
@@ -60,5 +65,5 @@ async function askCyberGuard(messages, context = '') {
 
 module.exports = {
   askCyberGuard,
-  hasAiEnabled: () => !!anthropicClient
+  hasAiEnabled: () => !!geminiClient
 };

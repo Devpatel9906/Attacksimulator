@@ -1,8 +1,8 @@
-const { askCyberGuard, hasAiEnabled } = require('../utils/anthropicClient');
+const { askCyberGuard, hasAiEnabled } = require('../utils/geminiClient');
 
 async function generateAdminTemplates(request, reply) {
   if (!hasAiEnabled()) {
-    return reply.status(503).send({ error: "CyberGuard AI is not configured. (Missing ANTHROPIC_API_KEY)" });
+    return reply.status(503).send({ error: "CyberGuard AI is not configured. (Missing GEMINI_API_KEY)" });
   }
 
   const { theme, targetDepartment } = request.body || {};

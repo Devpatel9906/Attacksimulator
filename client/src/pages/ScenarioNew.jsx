@@ -103,7 +103,7 @@ const ScenarioNew = () => {
       setAiResponse(res.data.result);
     } catch (err) {
       console.error(err);
-      setAiResponse('Error: CyberGuard AI is currently unreachable or unconfigured. Please ensure ANTHROPIC_API_KEY is set in your environment.');
+      setAiResponse('Error: CyberGuard AI is currently unreachable or unconfigured. Please ensure GEMINI_API_KEY is set in your environment.');
     } finally {
       setIsAiLoading(false);
     }
