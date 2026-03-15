@@ -17,6 +17,7 @@ const awarenessRoutes = require('./routes/awarenessRoutes') // NEW
 const employeeAuthRoutes = require('./routes/employeeAuthRoutes') // ADDED
 const attackRoutes = require('./routes/attackRoutes')
 const adminAttackRoutes = require('./routes/adminAttackRoutes')
+const cyberguardRoutes = require('./routes/cyberguardRoutes') // NEW LLM AI
 
 
 const app = Fastify({ logger: true })
@@ -72,6 +73,7 @@ const start = async () => {
     app.register(employeeAuthRoutes, { prefix: '/api' }) // ADDED
     app.register(attackRoutes)
     app.register(adminAttackRoutes, { prefix: '/api' })
+    app.register(cyberguardRoutes, { prefix: '/api' }) // NEW LLM AI
 
     app.get('/', async () => ({
       message: 'AttackSimulator API is running',
