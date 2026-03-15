@@ -18,4 +18,10 @@ api.interceptors.response.use(
   }
 );
 
+export const cyberguardApi = {
+  generateTemplates: (data) => api.post('/api/cyberguard/templates', data),
+  explainRedFlags: (data) => api.post('/api/cyberguard/explain', data),
+  analyzeRisk: (data) => api.post('/api/cyberguard/analyze', data),
+};
+
 export default api;

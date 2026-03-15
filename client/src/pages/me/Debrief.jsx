@@ -61,6 +61,9 @@ function ChainStep({ step, delay }) {
   );
 }
 
+import CyberGuardChat from '../../components/CyberGuardChat';
+import { cyberguardApi } from '../../lib/api';
+
 export default function Debrief() {
   const { scenarioId } = useParams();
   const navigate = useNavigate();
@@ -69,6 +72,28 @@ export default function Debrief() {
   const attackType = 'email_phishing';
   const flags = ATTACK_FLAGS[attackType] || ATTACK_FLAGS.email_phishing;
   const responses = CORRECT_RESPONSES[attackType] || CORRECT_RESPONSES.email_phishing;
+
+  // AI State
+  const [aiResponse, setAiResponse] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+
+  const handleExplainFlags = async () => {
+    setIsAiLoading(true);
+    setAiResponse('');
+    
+    try {
+      const res = await cyberguardApi.explainRedFlags({
+        attackType: attackType,
+        flagsMissed: flags
+      });
+      setAiResponse(res.data.result);
+    } catch (err) {
+      console.error(err);
+      setAiResponse('CyberGuard AI is currently unreachable. Please ask your IT/Security admin for help.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto pb-20 flex flex-col gap-6">
@@ -137,6 +162,17 @@ export default function Debrief() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* AI EXPLANATION */}
+          <div className="animate-fadeUp" style={{ animationDelay: '0.4s' }}>
+            <CyberGuardChat 
+              title="Still Confused? Ask CyberGuard"
+              isLoading={isAiLoading}
+              response={aiResponse}
+              onGenerate={handleExplainFlags}
+              buttonText="EXPLAIN RED FLAGS"
+            />
           </div>
         </>
       ) : (
