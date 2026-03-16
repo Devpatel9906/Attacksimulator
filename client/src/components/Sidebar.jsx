@@ -14,7 +14,8 @@ import {
   BookOpen, 
   Library, 
   Globe,
-  LogOut
+  LogOut,
+  Send
 } from 'lucide-react';
 
 const GhostSkullIcon = ({ className }) => (
@@ -42,8 +43,9 @@ const Sidebar = () => {
       label: 'OPERATIONS',
       links: [
         { name: 'Dashboard', icon: <Grid2X2 size={16} />, path: '/dashboard' },
+        { name: 'Send Phishing', icon: <Send size={16} />, path: '/send-phishing' },
         { name: 'Scenarios', icon: <Terminal size={16} />, path: '/scenarios' },
-        { name: 'Live Map', icon: <Activity size={16} />, path: '/livemap' }, // Updated default path to distinct active route if logic needed
+        { name: 'Live Map', icon: <Activity size={16} />, path: '/livemap' },
       ]
     },
     {

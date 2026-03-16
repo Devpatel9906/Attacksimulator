@@ -17,15 +17,22 @@ const awarenessRoutes = require('./routes/awarenessRoutes') // NEW
 const employeeAuthRoutes = require('./routes/employeeAuthRoutes') // ADDED
 const attackRoutes = require('./routes/attackRoutes')
 const adminAttackRoutes = require('./routes/adminAttackRoutes')
-const cyberguardRoutes = require('./routes/cyberguardRoutes') // NEW LLM AI
 
 
 const app = Fastify({ logger: true })
 
 const start = async () => {
   try {
+    const allowedOrigins = [
+      /localhost:\d+$/,
+      /127\.0\.0\.1:\d+$/
+    ]
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(new RegExp(process.env.FRONTEND_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+    }
+
     await app.register(require('@fastify/cors'), {
-      origin: true, // Temporarily allow all origins for rapid deployment
+      origin: allowedOrigins,
       credentials: true
     })
 
@@ -73,12 +80,6 @@ const start = async () => {
     app.register(employeeAuthRoutes, { prefix: '/api' }) // ADDED
     app.register(attackRoutes)
     app.register(adminAttackRoutes, { prefix: '/api' })
-    app.register(cyberguardRoutes, { prefix: '/api' }) // NEW LLM AI
-
-    app.get('/', async () => ({
-      message: 'AttackSimulator API is running',
-      version: '1.0.0'
-    }))
 
     app.get('/health', async () => ({
       status: 'ok',

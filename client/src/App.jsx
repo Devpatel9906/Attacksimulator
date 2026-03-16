@@ -29,6 +29,7 @@ import EmployeeDetail from './pages/EmployeeDetail';
 import Leaderboard from './pages/Leaderboard';
 import DefenderDashboard from './pages/DefenderDashboard';
 import DefenderLive from './pages/DefenderLive';
+import SendPhishing from './pages/SendPhishing';
 
 // Knowledge Base
 import NormalAttacks from './pages/knowledge/NormalAttacks';
@@ -120,6 +121,11 @@ function App() {
         {/* ── Admin / Analyst / Defender ── */}
         <Route path="/dashboard" element={
           <Protected roles={AdminAnalystDef}><Dashboard /></Protected>
+        } />
+
+        {/* Send Phishing — execute by channel from UI */}
+        <Route path="/send-phishing" element={
+          <Protected roles={AdminAnalystDef}><SendPhishing /></Protected>
         } />
 
         {/* Scenarios */}

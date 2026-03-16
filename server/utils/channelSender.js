@@ -1,5 +1,19 @@
-const { Resend } = require('resend')
-const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_to_prevent_crash_123')
+const nodemailer = require('nodemailer')
+
+let transporter = null
+function getTransporter() {
+  if (transporter) return transporter
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT) || 587,
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  })
+  return transporter
+}
 
 const twilio = require('twilio')
 const axios = require('axios')
@@ -31,9 +45,9 @@ function getTwilioClient() {
 async function sendEmailResend({ to, subject, html }) {
 
   try {
-
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+    const transport = getTransporter()
+    await transport.sendMail({
+      from: process.env.SMTP_FROM || `"IT Security" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html
@@ -68,9 +82,9 @@ async function sendEmailWithPDF({
 }) {
 
   try {
-
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+    const transport = getTransporter()
+    await transport.sendMail({
+      from: process.env.SMTP_FROM || `"IT Security" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html: `

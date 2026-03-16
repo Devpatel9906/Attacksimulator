@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
-import { cyberguardApi } from '../lib/api';
-import CyberGuardChat from '../components/CyberGuardChat';
 
 const attackColors = {
   email_phishing: '#ff7a59',
@@ -52,10 +50,6 @@ const ScenarioNew = () => {
   const [departments, setDepartments] = useState([]);
   const [errors, setErrors] = useState({});
 
-  // CyberGuard AI State
-  const [aiResponse, setAiResponse] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
-
   useEffect(() => {
     // Mock fetch depts
     const fetchDepts = async () => {
@@ -83,30 +77,6 @@ const ScenarioNew = () => {
     setSelectedDepts(prev =>
       prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
     );
-  };
-
-  const handleGenerateTemplates = async () => {
-    if (selectedVectors.length === 0 && !name) {
-      setAiResponse('Please provide a Scenario Name or select some Attack Vectors first so I know what to design.');
-      return;
-    }
-    
-    setIsAiLoading(true);
-    setAiResponse('');
-    
-    try {
-      const selectedNames = selectedVectors.map(v => attackTiles.find(t => t.id === v)?.name).filter(Boolean);
-      const res = await cyberguardApi.generateTemplates({
-        theme: name || selectedNames.join(', '),
-        targetDepartment: selectedDepts.length ? departments.filter(d => selectedDepts.includes(d.id)).map(d => d.name).join(', ') : 'All Departments'
-      });
-      setAiResponse(res.data.result);
-    } catch (err) {
-      console.error(err);
-      setAiResponse('Error: CyberGuard AI is currently unreachable or unconfigured. Please ensure GEMINI_API_KEY is set in your environment.');
-    } finally {
-      setIsAiLoading(false);
-    }
   };
 
   const handleSubmit = async (e, isDraft) => {
@@ -229,16 +199,6 @@ const ScenarioNew = () => {
               ))
             )}
           </div>
-        </div>
-        
-        {/* SEC 3.5: AI INTEGRATION */}
-        <div className="mb-10">
-          <CyberGuardChat 
-            title="Generate Campaign Concepts"
-            isLoading={isAiLoading}
-            response={aiResponse}            onGenerate={handleGenerateTemplates}
-            buttonText="ASK CYBERGUARD"
-          />
         </div>
 
         {/* SEC 4: SUBMIT */}

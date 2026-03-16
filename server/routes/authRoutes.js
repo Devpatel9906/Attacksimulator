@@ -23,7 +23,7 @@ const redis = require('../config/redis')
 const authLimiter = new RateLimiterRedis({
   storeClient: redis,
   keyPrefix: 'auth_limit',
-  points: 5,
+  points: 20, // Increased points to allow consecutive register -> login flows during testing
   duration: 900,
   blockDuration: 900
 })

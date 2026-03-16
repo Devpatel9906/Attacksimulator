@@ -147,7 +147,8 @@ async function attackRoutes(fastify) {
       template,
       subject,
       message: customMessage,
-      aggressionLevel = 1
+      aggressionLevel = 1,
+      targetInput
     } = req.body || {}
 
     if (!channel || !ALLOWED_CHANNELS.includes(channel))
@@ -156,12 +157,24 @@ async function attackRoutes(fastify) {
         allowed: ALLOWED_CHANNELS
       })
 
-    if (!employeeId)
-      return reply.status(400).send({ error: 'employeeId is required' })
+    if (!employeeId && !targetInput)
+      return reply.status(400).send({ error: 'employeeId or targetInput is required' })
 
-    const employee = await Employee.findById(employeeId)
-    if (!employee)
-      return reply.status(404).send({ error: 'Employee not found' })
+    let employee;
+
+    if (employeeId) {
+      employee = await Employee.findById(employeeId)
+      if (!employee)
+        return reply.status(404).send({ error: 'Employee not found' })
+    } else if (targetInput) {
+      employee = {
+        displayName: 'Target User',
+        behavioralArchetype: 'unknown'
+      };
+      if (channel === 'email') employee.email = targetInput;
+      else if (channel === 'sms' || channel === 'whatsapp' || channel === 'voice') employee.phone = targetInput;
+      else if (channel === 'telegram') employee.telegramId = targetInput;
+    }
 
     const token = nanoid(32)
     const trackingUrl =

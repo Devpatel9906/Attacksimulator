@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useAuthStore from '../stores/authStore';
+import PhishingSender from '../components/PhishingSender';
 
 const ghostStateConfig = {
   DORMANT:    { color: '#9dc0c3', label: 'Dormant',    icon: '●' },
@@ -72,6 +73,7 @@ const ScenarioDetail = () => {
 
   const gs = ghostStateConfig[scenario.ghostState] || ghostStateConfig.DORMANT;
   const isAdmin = user?.role === 'admin';
+  const canSendPhishing = ['admin', 'analyst', 'defender'].includes(user?.role);
 
   return (
     <div className="p-4 md:p-8 max-w-[1400px] mx-auto pb-20">
@@ -132,6 +134,19 @@ const ScenarioDetail = () => {
               <button className="px-4 py-2 bg-transparent border border-[#ff4444] text-[#ff4444] text-[12px] uppercase tracking-widest font-bold rounded-[4px] hover:bg-[rgba(255,68,68,0.1)] transition-colors">TERMINATE</button>
               <button onClick={() => navigate(`/scenarios/${id}/live`)} className="btn-ghost text-[12px]">VIEW LIVE MAP →</button>
             </div>
+          )}
+
+          {/* 2b. Send phishing by channel (admin, analyst, defender) */}
+          {canSendPhishing && (
+            <>
+              <PhishingSender scenarioId={id} />
+              <p className="text-[11px] text-[var(--as-muted)]">
+                Or{' '}
+                <button type="button" onClick={() => navigate('/send-phishing')} className="text-[var(--as-accent)] hover:underline uppercase tracking-wider">
+                  open full Send Phishing page →
+                </button>
+              </p>
+            </>
           )}
 
           {/* 3. Event Feed */}
