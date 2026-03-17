@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuthStore from '../stores/authStore';
+import api from '../lib/api';
 
 const ARCHETYPES = [
   { id: 'ALL', label: 'All' },
@@ -17,21 +15,9 @@ const ARCHETYPE_STYLES = {
   skeptical_verifier: { bg: 'rgba(61,214,198,0.15)',  color: '#3dd6c6' },
 };
 
-const DEPARTMENTS = ['ALL', 'Finance', 'Sales', 'Marketing', 'Engineering', 'HR', 'Legal'];
-
-const MOCK_EMPLOYEES = [
-  { id: 'e1', name: 'Alice Zhang',  role: 'Senior Accountant', dept: 'Finance',     archetype: 'distracted_clicker', score: 34, passed: 1, failed: 3, compromised: true  },
-  { id: 'e2', name: 'Bob Lee',      role: 'Account Executive', dept: 'Sales',       archetype: 'rushed_responder',   score: 52, passed: 3, failed: 2, compromised: false },
-  { id: 'e3', name: 'Carol Kim',    role: 'Campaign Manager',  dept: 'Marketing',   archetype: 'skeptical_verifier', score: 88, passed: 5, failed: 0, compromised: false },
-  { id: 'e4', name: 'Dave Wu',      role: 'CFO',               dept: 'Finance',     archetype: 'trusting_delegator', score: 41, passed: 2, failed: 2, compromised: true  },
-  { id: 'e5', name: 'Eve Park',     role: 'Recruiter',         dept: 'HR',          archetype: 'rushed_responder',   score: 29, passed: 0, failed: 4, compromised: false },
-  { id: 'e6', name: 'Frank Ross',   role: 'Staff Engineer',    dept: 'Engineering', archetype: 'skeptical_verifier', score: 91, passed: 6, failed: 0, compromised: false },
-  { id: 'e7', name: 'Grace Liu',    role: 'Sales Director',    dept: 'Sales',       archetype: 'trusting_delegator', score: 63, passed: 3, failed: 1, compromised: false },
-  { id: 'e8', name: 'Henry Brown',  role: 'Legal Counsel',     dept: 'Legal',       archetype: 'skeptical_verifier', score: 77, passed: 4, failed: 0, compromised: false },
-];
+const DEPARTMENTS = ['ALL', 'Finance', 'Sales', 'Marketing', 'Engineering', 'HR', 'IT', 'Legal'];
 
 const EMPTY_FORM = { firstName: '', lastName: '', email: '', phone: '', role: '', department: '', managerEmail: '' };
-const PAGE_SIZE = 6;
 
 const scoreColor = s => s < 40 ? '#ff4444' : s < 70 ? '#ff7a59' : '#3dd6c6';
 
@@ -40,11 +26,19 @@ export default function EmployeeList() {
   const user = useAuthStore(s => s.user);
   const isAdmin = user?.role === 'admin';
 
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [totalEmployees, setTotalEmployees] = useState(0);
+  const [compromisedCount, setCompromisedCount] = useState(0);
+  
   const [dept, setDept] = useState('ALL');
   const [archetype, setArchetype] = useState('ALL');
   const [search, setSearch] = useState('');
   const [compromisedOnly, setCompromisedOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [showSlideOver, setShowSlideOver] = useState(false);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -52,16 +46,31 @@ export default function EmployeeList() {
   const [dragOver, setDragOver] = useState(false);
   const [csvResult, setCsvResult] = useState(null);
 
-  const filtered = MOCK_EMPLOYEES.filter(e => {
-    if (dept !== 'ALL' && e.dept !== dept) return false;
-    if (archetype !== 'ALL' && e.archetype !== archetype) return false;
-    if (compromisedOnly && !e.compromised) return false;
-    if (search && !e.name.toLowerCase().includes(search.toLowerCase()) && !e.role.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  });
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page,
+          limit,
+          ...(dept !== 'ALL' && { department: dept }),
+          ...(archetype !== 'ALL' && { archetype }),
+          ...(search && { search })
+        };
+        const { data } = await api.get('/api/employees', { params });
+        setEmployees(data.employees);
+        setTotalEmployees(data.pagination.total);
+        setTotalPages(data.pagination.pages);
+        // Approximation for compromised count since we don't have separate stats API yet
+        setCompromisedCount(data.employees.filter(e => e.isCompromised).length);
+      } catch (err) {
+        console.error('Failed to fetch employees:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEmployees();
+  }, [page, limit, dept, archetype, search]);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -89,7 +98,7 @@ export default function EmployeeList() {
       <div className="flex items-center justify-between flex-wrap gap-4 animate-slideInLeft">
         <div>
           <h1 className="text-[28px] font-bold text-[var(--as-accent2)] uppercase tracking-wider">Employee Intelligence</h1>
-          <p className="text-[var(--as-muted)] text-[12px] mt-0.5">{MOCK_EMPLOYEES.length} employees · {MOCK_EMPLOYEES.filter(e=>e.compromised).length} compromised</p>
+          <p className="text-[var(--as-muted)] text-[12px] mt-0.5">{totalEmployees} employees · {compromisedCount} active issues</p>
         </div>
         {isAdmin && (
           <div className="flex gap-3">
@@ -144,9 +153,12 @@ export default function EmployeeList() {
             </tr>
           </thead>
           <tbody>
-            {paged.map((emp, i) => {
-              const at = ARCHETYPE_STYLES[emp.archetype] || { bg: 'rgba(61,214,198,0.1)', color: '#3dd6c6' };
-              const initials = emp.name.split(' ').map(n => n[0]).join('');
+            {loading ? (
+              <tr><td colSpan={8} className="py-12 text-center text-[var(--as-muted)] animate-pulse">Scanning infrastructure...</td></tr>
+            ) : employees.map((emp, i) => {
+              const at = ARCHETYPE_STYLES[emp.behavioralArchetype] || { bg: 'rgba(61,214,198,0.1)', color: '#3dd6c6' };
+              const fullName = `${emp.firstName} ${emp.lastName}`;
+              const initials = fullName.split(' ').map(n => n[0]).join('');
               return (
                 <tr key={emp.id} className="border-b border-[rgba(61,214,198,0.08)] hover:bg-[rgba(61,214,198,0.03)] transition-colors animate-fadeUp" style={{ animationDelay: `${i * 40}ms` }}>
                   <td className="py-3.5 px-3">
@@ -154,14 +166,14 @@ export default function EmployeeList() {
                       style={{ background: at.bg, color: at.color }}>{initials}</div>
                   </td>
                   <td className="py-3.5 px-3">
-                    <div className="text-[13px] font-bold text-[var(--as-text)]">{emp.name}</div>
+                    <div className="text-[13px] font-bold text-[var(--as-text)]">{fullName}</div>
                     <div className="text-[11px] text-[var(--as-muted)]">{emp.role}</div>
                   </td>
-                  <td className="py-3.5 px-3 text-[12px] text-[var(--as-text)]">{emp.dept}</td>
+                  <td className="py-3.5 px-3 text-[12px] text-[var(--as-text)]">{emp.department?.name || 'N/A'}</td>
                   <td className="py-3.5 px-3">
                     <span className="text-[10px] uppercase px-2 py-0.5 rounded-full"
                       style={{ background: at.bg, color: at.color }}>
-                      {emp.archetype.replace(/_/g, ' ')}
+                      {emp.behavioralArchetype.replace(/_/g, ' ')}
                     </span>
                   </td>
                   <td className="py-3.5 px-3">
@@ -171,7 +183,7 @@ export default function EmployeeList() {
                     <span className="text-[var(--as-accent2)]">{emp.passed} passed</span> / <span className="text-[#ff4444]">{emp.failed} failed</span>
                   </td>
                   <td className="py-3.5 px-3">
-                    {emp.compromised ? (
+                    {emp.isCompromised ? (
                       <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#ff4444] animate-pulse" />
                         <span className="text-[10px] font-bold text-[#ff4444] uppercase">Compromised</span>
@@ -189,8 +201,8 @@ export default function EmployeeList() {
                 </tr>
               );
             })}
-            {paged.length === 0 && (
-              <tr><td colSpan={8} className="py-12 text-center text-[var(--as-muted)] text-[13px]">No employees match the current filters.</td></tr>
+            {!loading && employees.length === 0 && (
+              <tr><td colSpan={8} className="py-12 text-center text-[var(--as-muted)] text-[13px]">No records found in active directory.</td></tr>
             )}
           </tbody>
         </table>

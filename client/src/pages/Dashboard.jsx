@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import useAuthStore from '../stores/authStore';
+import api from '../lib/api';
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
+  const [overview, setOverview] = useState(null);
+  const [departments, setDepartments] = useState([]);
+  const [recentScenarios, setRecentScenarios] = useState([]);
   const [org, setOrg] = useState(null);
   
   const user = useAuthStore(state => state.user);
@@ -13,48 +13,39 @@ const Dashboard = () => {
   // Mock API Call data
   useEffect(() => {
     const fetchData = async () => {
+      if (!user?.organizationId) return;
       setLoading(true);
-      
-      // Simulate API latency
-      await new Promise(r => setTimeout(r, 800));
-      
-      const mockOrg = {
-        name: 'Acme Corp',
-        industry: 'FinTech',
-        securityCultureBreakdown: {
-          reportRate: 68,
-          moduleCompletion: 92,
-          scoreImprovement: 14
-        }
-      };
+      try {
+        const [orgRes, deptRes, scenRes, empRes] = await Promise.all([
+          api.get(`/api/orgs/${user.organizationId}`),
+          api.get(`/api/orgs/${user.organizationId}/departments`),
+          api.get('/api/simulations/recent'), // Note: Verify this endpoint exists or adjust
+          api.get('/api/employees', { params: { limit: 1 } })
+        ]).catch(err => {
+          console.warn('One or more dashboard requests failed:', err);
+          return [null, { data: { departments: [] } }, { data: { simulations: [] } }, { data: { pagination: { total: 0 } } }];
+        });
 
-      const mockData = {
-        overview: {
-          totalEmployees: 1250,
-          compromisedEmployees: 14,
-          totalScenarios: 45,
-          activeScenarios: 3,
-          clickRate: 12.5,
-          reportRate: 68,
-          securityCultureScore: 78
-        },
-        departments: [
-          { id: 1, name: 'Engineering', employees: 420, riskScore: 'LOW', securityScore: 88, status: 'SECURE' },
-          { id: 2, name: 'Sales', employees: 215, riskScore: 'HIGH', securityScore: 42, status: 'VULNERABLE' },
-          { id: 3, name: 'Marketing', employees: 85, riskScore: 'MEDIUM', securityScore: 65, status: 'ATTENTION' },
-          { id: 4, name: 'HR', employees: 40, riskScore: 'LOW', securityScore: 91, status: 'SECURE' },
-          { id: 5, name: 'Finance', employees: 110, riskScore: 'MEDIUM', securityScore: 58, status: 'ATTENTION' }
-        ],
-        recentScenarios: [
-          { id: 'sc-1', name: 'Q3 Invoice Phish', status: 'ACTIVE', tags: ['EMAIL', 'FINANCE'], date: 'Oct 12, 2026' },
-          { id: 'sc-2', name: 'CEO Urgent Wire', status: 'COMPLETED', tags: ['WHALING', 'SMS'], date: 'Sep 28, 2026' },
-          { id: 'sc-3', name: 'IT Helpdesk Reset', status: 'DRAFT', tags: ['CREDENTIALS'], date: 'Nov 01, 2026' }
-        ]
-      };
+        const orgData = orgRes?.data?.organization;
+        setOrg(orgData);
+        setDepartments(deptRes?.data?.departments || []);
+        setRecentScenarios(scenRes?.data?.simulations || []);
 
-      setOrg(mockOrg);
-      setData(mockData);
-      setLoading(false);
+        setOverview({
+          totalEmployees: empRes?.data?.pagination?.total || orgData?.employeeCount || 0,
+          compromisedEmployees: 0, // Need to implement this stat on backend
+          totalScenarios: scenRes?.data?.total || 0,
+          activeScenarios: (scenRes?.data?.simulations || []).filter(s => s.status === 'active').length,
+          clickRate: orgData?.securityCultureBreakdown?.reportRate ? (100 - orgData.securityCultureBreakdown.reportRate) : 0,
+          reportRate: orgData?.securityCultureBreakdown?.reportRate || 0,
+          securityCultureScore: orgData?.securityCultureScore || 0
+        });
+
+      } catch (err) {
+        console.error('Failed to prepare dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -112,8 +103,6 @@ const Dashboard = () => {
     if (score <= 70) return '#ff7a59';
     return '#3dd6c6';
   };
-
-  const overview = data.overview;
   
   // SVG Arc Calculations
   const radius = 88;
@@ -198,9 +187,9 @@ const Dashboard = () => {
         {/* Culture Breakdown Bars */}
         <div className="flex flex-col gap-6 pe-4">
           {[
-            { label: 'REPORT RATE', val: org?.securityCultureBreakdown.reportRate },
-            { label: 'MODULE COMPLETION', val: org?.securityCultureBreakdown.moduleCompletion },
-            { label: 'SCORE IMPROVEMENT', val: org?.securityCultureBreakdown.scoreImprovement }
+            { label: 'REPORT RATE', val: org?.securityCultureBreakdown?.reportRate || 0 },
+            { label: 'MODULE COMPLETION', val: org?.securityCultureBreakdown?.moduleCompletion || 0 },
+            { label: 'SCORE IMPROVEMENT', val: org?.securityCultureBreakdown?.scoreImprovement || 0 }
           ].map((bar, i) => (
             <div key={i} className="flex flex-col gap-2">
               <div className="flex justify-between text-[12px] uppercase tracking-widest">
@@ -239,23 +228,26 @@ const Dashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {data.departments.map((dep, i) => (
-              <tr key={dep.id} className="text-[14px] text-[var(--as-text)] border-b border-[rgba(61,214,198,0.08)] hover:bg-[rgba(61,214,198,0.04)] transition-colors animate-fadeUp" style={{ animationDelay: `${0.5 + (i * 0.06)}s` }}>
+            {departments.map((dep, i) => (
+              <tr key={dep._id || dep.id} className="text-[14px] text-[var(--as-text)] border-b border-[rgba(61,214,198,0.08)] hover:bg-[rgba(61,214,198,0.04)] transition-colors animate-fadeUp" style={{ animationDelay: `${0.5 + (i * 0.06)}s` }}>
                 <td className="py-3 px-2 font-medium">{dep.name}</td>
-                <td className="py-3 px-2 text-[var(--as-muted)]">{dep.employees}</td>
+                <td className="py-3 px-2 text-[var(--as-muted)]">{dep.employeeCount}</td>
                 <td className="py-3 px-2">
                   <span className={`px-2 py-0.5 rounded-[4px] text-[10px] uppercase tracking-widest font-bold border ${
-                    dep.riskScore === 'HIGH' ? 'bg-[#ff4444]/20 text-[#ff4444] border-[#ff4444]/40' :
-                    dep.riskScore === 'MEDIUM' ? 'bg-[var(--as-accent)]/20 text-[var(--as-accent)] border-[var(--as-accent)]/40' :
+                    dep.riskScore > 70 ? 'bg-[#ff4444]/20 text-[#ff4444] border-[#ff4444]/40' :
+                    dep.riskScore > 30 ? 'bg-[var(--as-accent)]/20 text-[var(--as-accent)] border-[var(--as-accent)]/40' :
                     'bg-[var(--as-accent2)]/20 text-[var(--as-accent2)] border-[var(--as-accent2)]/40'
                   }`}>
-                    {dep.riskScore}
+                    {dep.riskScore > 70 ? 'HIGH' : dep.riskScore > 30 ? 'MEDIUM' : 'LOW'}
                   </span>
                 </td>
-                <td className="py-3 px-2 font-mono">{dep.securityScore}</td>
-                <td className="py-3 px-2 text-[10px] text-[var(--as-muted)]">{dep.status}</td>
+                <td className="py-3 px-2 font-mono">{dep.departmentSecurityScore || 0}</td>
+                <td className="py-3 px-2 text-[10px] text-[var(--as-muted)]">ACTIVE</td>
               </tr>
             ))}
+            {departments.length === 0 && (
+              <tr><td colSpan={5} className="py-6 text-center text-[var(--as-muted)]">No department data found.</td></tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -267,8 +259,8 @@ const Dashboard = () => {
           Recent Scenarios
         </h3>
         <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
-          {data.recentScenarios.map((scen, i) => (
-            <div key={scen.id} onClick={() => navigate(`/scenarios/${scen.id}`)} className="card min-w-[240px] flex-shrink-0 flex flex-col gap-3 cursor-pointer hover:-translate-y-1 transition-transform snap-start relative overflow-hidden group">
+          {recentScenarios.map((scen, i) => (
+            <div key={scen._id || scen.id} onClick={() => navigate(`/scenarios/${scen._id || scen.id}`)} className="card min-w-[240px] flex-shrink-0 flex flex-col gap-3 cursor-pointer hover:-translate-y-1 transition-transform snap-start relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-16 h-16 bg-[var(--as-accent2)] opacity-5 rounded-bl-full group-hover:opacity-10 transition-opacity"></div>
               <div className="flex justify-between items-start">
                 <span className="text-[14px] font-bold text-[var(--as-text)] truncate pr-2 leading-tight">{scen.name}</span>
