@@ -185,8 +185,8 @@ const login = async (req, reply) => {
 
     reply.setCookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true, // Required for sameSite: 'none'
+      sameSite: 'none', // Allow cross-origin between Vercel and Render
       path: '/',
       maxAge: 8 * 60 * 60
     })
@@ -232,8 +232,8 @@ const logout = async (req, reply) => {
 
   reply.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: true,
+    sameSite: 'none',
     path: '/'
   })
 

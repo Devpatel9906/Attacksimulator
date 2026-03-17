@@ -22,7 +22,7 @@ const Dashboard = () => {
         const [orgRes, deptRes, scenRes, empRes] = await Promise.all([
           api.get(`/api/orgs/${user.organizationId}`),
           api.get(`/api/orgs/${user.organizationId}/departments`),
-          api.get('/api/simulations/recent'), // Note: Verify this endpoint exists or adjust
+          api.get(`/api/orgs/${user.organizationId}/scenarios`), // Updated to valid endpoint
           api.get('/api/employees', { params: { limit: 1 } })
         ]).catch(err => {
           console.warn('One or more dashboard requests failed:', err);
@@ -32,13 +32,13 @@ const Dashboard = () => {
         const orgData = orgRes?.data?.organization;
         setOrg(orgData);
         setDepartments(deptRes?.data?.departments || []);
-        setRecentScenarios(scenRes?.data?.simulations || []);
+        setRecentScenarios(scenRes?.data?.scenarios || []); // backend uses 'scenarios' key
 
         setOverview({
           totalEmployees: empRes?.data?.pagination?.total || orgData?.employeeCount || 0,
-          compromisedEmployees: 0, // Need to implement this stat on backend
-          totalScenarios: scenRes?.data?.total || 0,
-          activeScenarios: (scenRes?.data?.simulations || []).filter(s => s.status === 'active').length,
+          compromisedEmployees: 0,
+          totalScenarios: (scenRes?.data?.scenarios || []).length,
+          activeScenarios: (scenRes?.data?.scenarios || []).filter(s => s.status === 'active').length,
           clickRate: orgData?.securityCultureBreakdown?.reportRate ? (100 - orgData.securityCultureBreakdown.reportRate) : 0,
           reportRate: orgData?.securityCultureBreakdown?.reportRate || 0,
           securityCultureScore: orgData?.securityCultureScore || 0
@@ -54,7 +54,7 @@ const Dashboard = () => {
     fetchData();
   }, [user]);
 
-  if (loading) {
+  if (loading || !overview) {
     return (
       <div className="p-8 max-w-7xl mx-auto flex flex-col gap-6 animate-pulse">
         <div className="h-12 w-64 bg-[rgba(61,214,198,0.06)] rounded-md"></div>
@@ -80,7 +80,7 @@ const Dashboard = () => {
       const totalFrames = Math.round((duration / 1000) * fps);
       let frame = 0;
 
-      const increment = value / totalFrames;
+      const increment = (Number(value) || 0) / totalFrames;
 
       const timer = setInterval(() => {
         frame++;
@@ -97,7 +97,7 @@ const Dashboard = () => {
       return () => clearInterval(timer);
     }, [value]);
 
-    const displayVal = isFloat ? count.toFixed(1) : Math.round(count);
+    const displayVal = isFloat ? (Number(count) || 0).toFixed(1) : Math.round(Number(count) || 0);
     return <span>{displayVal}{isPercent ? '%' : ''}</span>;
   };
 
@@ -106,13 +106,13 @@ const Dashboard = () => {
     if (score <= 70) return '#ff7a59';
     return '#3dd6c6';
   };
-  
+
   // SVG Arc Calculations
   const radius = 88;
   const circumference = 2 * Math.PI * radius;
   // Arc sweeps 270 degrees (75% of a full circle)
   const arcStrokeDasharray = `${circumference * 0.75} ${circumference}`;
-  const scorePercent = overview.securityCultureScore / 100;
+  const scorePercent = (overview?.securityCultureScore || 0) / 100;
   // Offset to animate the fill of the 270 degree arc
   const arcOffset = circumference * 0.75 * (1 - scorePercent);
 
