@@ -3,6 +3,7 @@ const nodemailer = require('nodemailer')
 let transporter = null
 function getTransporter() {
   if (transporter) return transporter
+  console.log('[SMTP INFO] Initializing transporter with user:', process.env.SMTP_USER)
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
@@ -446,7 +447,7 @@ async function dispatchAttack({
   customMessage = null,
   template = null
 }) {
-
+  console.log('[DISPATCH START]', { channel: forceChannel, email: employee.email, name: employee.displayName })
   const results = []
 
   const phone = employee.phone || null
