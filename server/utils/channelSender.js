@@ -54,6 +54,7 @@ async function sendEmailResend({ to, subject, html }) {
       html
     })
 
+    console.log('[EMAIL SENT]', to)
     return { sent: true, channel: 'email' }
 
   } catch (err) {
@@ -102,6 +103,7 @@ async function sendEmailWithPDF({
       }]
     })
 
+    console.log('[EMAIL PDF SENT]', to)
     return { sent: true, channel: 'email' }
 
   } catch (err) {
