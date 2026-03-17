@@ -190,7 +190,8 @@ async function attackRoutes(fastify) {
       channel,
       customSubject: subject || null,
       customMessage: customMessage || null,
-      template: template || null
+      template: template || null,
+      telegramId: employee.telegramId || null
     })
 
     return reply.send({

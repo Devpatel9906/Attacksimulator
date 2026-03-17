@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const mongoSanitize = require('mongo-sanitize')
 const crypto = require('crypto')
 
-const ENCRYPTION_KEY = Buffer.from(process.env.EMAIL_ENCRYPTION_KEY || 'a'.repeat(64), 'hex')
+const ENCRYPTION_KEY = Buffer.from(process.env.EMAIL_ENCRYPTION_KEY || process.env.FIELD_ENCRYPTION_SECRET || 'a'.repeat(64), 'hex')
 const IV_LENGTH = 16
 
 
@@ -47,6 +47,7 @@ const employeeSchema = new mongoose.Schema({
   phoneEncrypted: { type: String, default: null },
   phoneHash: { type: String, default: null },
   whatsappNumber: { type: String, default: null },
+  telegramId: { type: String, default: null },
 
 
   /* PASSWORD SECURITY */
