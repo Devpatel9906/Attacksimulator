@@ -7,11 +7,12 @@ const { authorize } = require('../middleware/authorize')
 const { nanoid } = require('nanoid')
 
 async function attackRoutes(fastify) {
-
+  
+  fastify.addHook('onRequest', authenticate)
 
   // ───────────────── EMAIL ATTACK ─────────────────
 
-  fastify.post('/api/attacks/email', async (req, reply) => {
+  fastify.post('/attacks/email', async (req, reply) => {
 
     const { employeeId, scenarioId, template } = req.body
 
@@ -46,7 +47,7 @@ async function attackRoutes(fastify) {
 
   // ───────────────── SMS ATTACK ─────────────────
 
-  fastify.post('/api/attacks/sms', async (req, reply) => {
+  fastify.post('/attacks/sms', async (req, reply) => {
 
     const { employeeId } = req.body
 
@@ -76,7 +77,7 @@ async function attackRoutes(fastify) {
 
   // ───────────────── WHATSAPP ATTACK ─────────────────
 
-  fastify.post('/api/attacks/whatsapp', async (req, reply) => {
+  fastify.post('/attacks/whatsapp', async (req, reply) => {
 
     const { employeeId } = req.body
 
@@ -106,7 +107,7 @@ async function attackRoutes(fastify) {
 
   // ───────────────── VOICE ATTACK ─────────────────
 
-  fastify.post('/api/attacks/voice', async (req, reply) => {
+  fastify.post('/attacks/voice', async (req, reply) => {
 
     const { employeeId } = req.body
 
@@ -138,7 +139,7 @@ async function attackRoutes(fastify) {
 
   const ALLOWED_CHANNELS = ['email', 'sms', 'whatsapp', 'voice', 'telegram']
 
-  fastify.post('/api/attacks/send', { preHandler: [authenticate, authorize(['admin', 'analyst', 'defender'])] }, async (req, reply) => {
+  fastify.post('/attacks/send', { preHandler: [authorize(['admin', 'analyst', 'defender'])] }, async (req, reply) => {
 
     const {
       channel,

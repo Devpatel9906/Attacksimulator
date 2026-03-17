@@ -93,7 +93,7 @@ const start = async () => {
     app.register(analyticsRoutes, { prefix: '/api' })
     app.register(awarenessRoutes, { prefix: '/api' }) // NEW
     app.register(employeeAuthRoutes, { prefix: '/api' }) // ADDED
-    app.register(attackRoutes)
+    app.register(attackRoutes, { prefix: '/api' })
     app.register(adminAttackRoutes, { prefix: '/api' })
 
     app.get('/health', async () => ({
