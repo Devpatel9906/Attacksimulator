@@ -2,7 +2,8 @@ const mongoose = require('mongoose')
 const mongoSanitize = require('mongo-sanitize')
 const crypto = require('crypto')
 
-const ENCRYPTION_KEY = Buffer.from(process.env.EMAIL_ENCRYPTION_KEY || process.env.FIELD_ENCRYPTION_SECRET || 'a'.repeat(64), 'hex')
+const secret = process.env.EMAIL_ENCRYPTION_KEY || process.env.FIELD_ENCRYPTION_SECRET || 'a'.repeat(64)
+const ENCRYPTION_KEY = crypto.createHash('sha256').update(secret).digest()
 const IV_LENGTH = 16
 
 
@@ -21,16 +22,25 @@ function encryptEmail(text) {
 
 /* DECRYPT EMAIL */
 
-function decryptEmail(text) {
-  const [ivHex, encrypted] = text.split(':')
-  const iv = Buffer.from(ivHex, 'hex')
-
-  const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv)
-
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-
-  return decrypted
+function decrypt(text) {
+  try {
+    if (!text) return null
+    const [ivHex, encryptedText] = text.split(':')
+    if (!ivHex || !encryptedText) {
+      console.error('[DECRYPTION ERROR]: Invalid encrypted text format - missing IV or encrypted part.')
+      return null
+    }
+    
+    const iv = Buffer.from(ivHex, 'hex')
+    const encryptedBuffer = Buffer.from(encryptedText, 'hex')
+    const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv)
+    let decrypted = decipher.update(encryptedBuffer)
+    decrypted = Buffer.concat([decrypted, decipher.final()])
+    return decrypted.toString()
+  } catch (err) {
+    console.error('[DECRYPTION ERROR]:', err.message)
+    return 'Decryption Failed'
+  }
 }
 
 
@@ -153,7 +163,7 @@ const employeeSchema = new mongoose.Schema({
 
 employeeSchema.virtual('email').get(function () {
   if (!this.emailEncrypted) return null
-  try { return decryptEmail(this.emailEncrypted) } catch { return null }
+  try { return decrypt(this.emailEncrypted) } catch { return null }
 })
 
 
@@ -161,7 +171,7 @@ employeeSchema.virtual('email').get(function () {
 
 employeeSchema.virtual('phone').get(function () {
   if (!this.phoneEncrypted) return null
-  try { return decryptEmail(this.phoneEncrypted) } catch { return null }
+  try { return decrypt(this.phoneEncrypted) } catch { return null }
 })
 
 
