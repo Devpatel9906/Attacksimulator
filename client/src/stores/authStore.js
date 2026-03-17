@@ -26,15 +26,6 @@ const useAuthStore = create((set, get) => ({
   login: async (email, password) => {
     const normalized = email.trim().toLowerCase();
 
-    // Mock demo accounts
-    const demo = DEMO_USERS[normalized];
-    if (demo && password === demo.pass) {
-      await new Promise(r => setTimeout(r, 600));
-      const user = { id: demo.id, name: demo.name, role: demo.role, email: normalized, organizationId: demo.organizationId };
-      set({ user, isAuthenticated: true, isLoading: false });
-      return user;
-    }
-
     // Real API attempt
     try {
       const { data } = await api.post('/api/auth/login', { email: normalized, password });
