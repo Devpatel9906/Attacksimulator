@@ -3,8 +3,18 @@ const nodemailer = require('nodemailer')
 let transporter = null
 function getTransporter() {
   if (transporter) return transporter
+  
+  const isGmail = (process.env.SMTP_HOST || '').includes('gmail.com')
+  
   console.log('[SMTP INFO] Initializing transporter with user:', process.env.SMTP_USER)
-  transporter = nodemailer.createTransport({
+  
+  const config = isGmail ? {
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+    }
+  } : {
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT) || 587,
     secure: false,
@@ -12,7 +22,16 @@ function getTransporter() {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS
     }
+  }
+
+  transporter = nodemailer.createTransport({
+    ...config,
+    // Add timeouts to handle Render's network quirks and avoid hanging reqs
+    connectionTimeout: 10000, // 10s
+    greetingTimeout: 10000,   // 10s
+    socketTimeout: 30000      // 30s
   })
+  
   return transporter
 }
 
