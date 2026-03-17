@@ -26,6 +26,8 @@ function getTransporter() {
 
   transporter = nodemailer.createTransport({
     ...config,
+    // Force IPv4 to bypass Render's IPv6 routing issues (ENETUNREACH)
+    family: 4,
     // Add timeouts to handle Render's network quirks and avoid hanging reqs
     connectionTimeout: 10000, // 10s
     greetingTimeout: 10000,   // 10s
