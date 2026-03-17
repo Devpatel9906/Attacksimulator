@@ -19,20 +19,35 @@ const attackRoutes = require('./routes/attackRoutes')
 const adminAttackRoutes = require('./routes/adminAttackRoutes')
 
 
-const app = Fastify({ logger: true })
+const app = Fastify({ 
+  logger: true,
+  trustProxy: true // Essential for Render/Vercel proxy headers
+})
 
 const start = async () => {
   try {
-    const allowedOrigins = [
-      /localhost:\d+$/,
-      /127\.0\.0\.1:\d+$/
-    ]
-    if (process.env.FRONTEND_URL) {
-      allowedOrigins.push(new RegExp(process.env.FRONTEND_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
-    }
-
     await app.register(require('@fastify/cors'), {
-      origin: allowedOrigins,
+      origin: (origin, cb) => {
+        // Allow local dev
+        if (!origin || /localhost:\d+$/.test(origin) || /127\.0\.0\.1:\d+$/.test(origin)) {
+          cb(null, true);
+          return;
+        }
+        
+        // Allow FRONTEND_URL and Vercel subdomains if needed
+        if (process.env.FRONTEND_URL && origin.startsWith(process.env.FRONTEND_URL)) {
+          cb(null, true);
+          return;
+        }
+
+        // Broaden for Vercel previews if necessary
+        if (origin.endsWith('.vercel.app')) {
+          cb(null, true);
+          return;
+        }
+
+        cb(null, false);
+      },
       credentials: true
     })
 
